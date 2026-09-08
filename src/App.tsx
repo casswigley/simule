@@ -1,4 +1,4 @@
-import { Compass, Cpu, Eye, Hammer, History, Layers3, Maximize2, Minimize2, Minus, Plus, Send, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Compass, Cpu, Eye, Hammer, History, Layers3, Maximize2, Minimize2, Minus, Plus, Send, SlidersHorizontal, Sparkles, Waves } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { runBuilderCommand } from "./builder";
 import { SimulationCanvas } from "./components/SimulationCanvas";
@@ -14,8 +14,10 @@ const starterMessages: ChatMessage[] = [
 ];
 
 const suggestions = [
+  "create an empty modern city overrun by zombies",
   "turn on ray tracing bloom and lens flare",
   "use self-similar fractal blocks with more detail",
+  "create a flooded dolomite spire landscape at sunset",
   "make it a volcanic night world with ember weather",
   "add three towers and a glowing portal",
   "raise mountains and add a river",
@@ -35,6 +37,11 @@ export function App() {
     () => worlds.find((world) => world.id === activeId) ?? worlds[0],
     [activeId, worlds]
   );
+  const controlNote = activeWorld.landscapeStyle === "zombie-city"
+    ? "Arrow keys move and turn through the city. Space fires with tracer, impact, and crosshair feedback."
+    : activeWorld.landscapeStyle === "dolomite-spires"
+      ? "W or Up paddles forward, S or Down slows/reverses, A/D or Left/Right rows into a slow turn."
+      : "WASD or arrow keys move through the world. Space jumps when grounded; mouse look aims the view.";
 
   function updateActiveWorld(next: WorldModel) {
     setWorlds((current) => current.map((world) => (world.id === next.id ? next : world)));
@@ -155,6 +162,7 @@ export function App() {
           <Metric label="Max Block" value={activeWorld.maximumBlockSize.toFixed(1)} />
           <Metric label="Render" value={activeWorld.renderQuality} />
           <Metric label="Atmosphere" value={`${Math.round(activeWorld.refractionLevel * 100)}%`} />
+          <Metric label="Water" value={activeWorld.waterLevel.toFixed(1)} />
         </div>
 
         <div className="panel-section control-bank" aria-label="Recursive world controls">
@@ -242,6 +250,22 @@ export function App() {
               onInput={(event) => patchActiveWorld({ refractionLevel: Number(event.currentTarget.value) })}
             />
           </div>
+          <div className="range-control">
+            <ControlLabel
+              label="Water Level"
+              onDecrease={() => patchActiveWorld({ waterLevel: Math.max(-8, activeWorld.waterLevel - 0.5) })}
+              onIncrease={() => patchActiveWorld({ waterLevel: Math.min(6, activeWorld.waterLevel + 0.5) })}
+            />
+            <input
+              type="range"
+              min="-8"
+              max="6"
+              step="0.1"
+              value={activeWorld.waterLevel}
+              onChange={(event) => patchActiveWorld({ waterLevel: Number(event.target.value) })}
+              onInput={(event) => patchActiveWorld({ waterLevel: Number(event.currentTarget.value) })}
+            />
+          </div>
         </div>
       </aside>
 
@@ -254,8 +278,12 @@ export function App() {
           </div>
           <div className="stage-actions">
             <div className="hud-pill">
+              <Waves size={16} aria-hidden="true" />
+              Water {activeWorld.waterLevel.toFixed(1)}
+            </div>
+            <div className="hud-pill optional-hud">
               <Eye size={16} aria-hidden="true" />
-              Click viewport to enter
+              Click viewport
             </div>
             <button className="fullscreen-button" type="button" onClick={toggleFullscreen} aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>
               {isFullscreen ? <Minimize2 size={18} aria-hidden="true" /> : <Maximize2 size={18} aria-hidden="true" />}
@@ -315,7 +343,7 @@ export function App() {
 
         <div className="control-note">
           <Hammer size={16} aria-hidden="true" />
-          WASD to move, Up/Down to move, Left/Right to turn, mouse to look.
+          {controlNote}
         </div>
       </aside>
     </main>

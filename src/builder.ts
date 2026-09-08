@@ -1,7 +1,7 @@
 import type { Biome, BuilderResult, EntityKind, TimeOfDay, Weather, WorldModel } from "./types";
 import { biomePalette, cloneWorld, createEntity } from "./worlds";
 
-const biomeWords: Biome[] = ["alpine", "desert", "forest", "oceanic", "orbital", "volcanic", "neon"];
+const biomeWords: Biome[] = ["alpine", "desert", "forest", "oceanic", "orbital", "volcanic", "neon", "urban"];
 const timeWords: TimeOfDay[] = ["dawn", "day", "dusk", "night"];
 const weatherWords: Weather[] = ["clear", "mist", "storm", "snow", "ember", "aurora"];
 const entityWords: EntityKind[] = [
@@ -20,7 +20,9 @@ const entityWords: EntityKind[] = [
   "cathedral",
   "mosque",
   "tent",
-  "stoneCircle"
+  "stoneCircle",
+  "zombie",
+  "npc"
 ];
 
 const numberWords: Record<string, number> = {
@@ -43,6 +45,7 @@ export function runBuilderCommand(input: string, current: WorldModel): BuilderRe
   const world = cloneWorld(current);
   const operations: string[] = [];
   const shouldRegenerate = lower.includes("new world") || lower.includes("rebuild") || lower.includes("regenerate");
+  let configuredZombieCity = false;
 
   if (!command) {
     return {
@@ -80,6 +83,65 @@ export function runBuilderCommand(input: string, current: WorldModel): BuilderRe
     world.terrainHeight = clamp(world.terrainHeight + 3, 2, 18);
     world.terrainScale = clamp(world.terrainScale + 0.012, 0.04, 0.18);
     operations.push("Raised and sharpened terrain");
+  }
+
+  if (
+    lower.includes("zombie") ||
+    lower.includes("new york") ||
+    lower.includes("manhattan") ||
+    lower.includes("modern city") ||
+    lower.includes("city") ||
+    lower.includes("gun") ||
+    lower.includes("shoot")
+  ) {
+    world.name = "Dead Manhattan";
+    world.biome = "urban";
+    world.landscapeStyle = "zombie-city";
+    world.matterMode = "smooth";
+    world.terrainHeight = 1;
+    world.terrainScale = 0.04;
+    world.waterLevel = -10;
+    world.density = 0.92;
+    world.fractalDepth = 5;
+    world.refractionLevel = 0.24;
+    world.renderQuality = "cinematic";
+    world.timeOfDay = "dusk";
+    world.weather = "mist";
+    world.skyColor = "#8fa4b0";
+    world.groundColor = "#343839";
+    world.accentColor = "#d0d6cf";
+    world.entities = [...seedZombieCityEntities(world), ...seedCityNpcEntities(world)];
+    configuredZombieCity = true;
+    operations.push("Rebuilt as a modern city with robotic centaurs and NPC walkers");
+  }
+
+  if (
+    lower.includes("dolomite") ||
+    lower.includes("limestone") ||
+    lower.includes("stalagmite") ||
+    lower.includes("stalactite") ||
+    lower.includes("spire landscape") ||
+    lower.includes("needle mountain")
+  ) {
+    const palette = biomePalette("alpine");
+    world.biome = "alpine";
+    world.landscapeStyle = "dolomite-spires";
+    world.matterMode = "smooth";
+    world.terrainHeight = Math.max(world.terrainHeight, 20);
+    world.terrainScale = 0.078;
+    world.density = clamp(world.density + 0.24, 0.1, 1);
+    world.fractalDepth = 8;
+    world.minimumBlockSize = 0.75;
+    world.maximumBlockSize = 4;
+    world.waterLevel = Math.max(world.waterLevel, 3.4);
+    world.refractionLevel = Math.max(world.refractionLevel, 0.82);
+    world.renderQuality = "cinematic";
+    world.timeOfDay = "dusk";
+    world.weather = "mist";
+    world.skyColor = "#7aa7c1";
+    world.groundColor = palette.ground;
+    world.accentColor = "#ffd18f";
+    operations.push("Built flooded Dolomite spire geography");
   }
 
   if (lower.includes("flat") || lower.includes("smooth")) {
@@ -134,7 +196,7 @@ export function runBuilderCommand(input: string, current: WorldModel): BuilderRe
     operations.push("Enabled blended metaball isosurface matter");
   }
 
-  if (lower.includes("cinematic") || lower.includes("ray tracing") || lower.includes("lens flare") || lower.includes("bloom")) {
+  if (lower.includes("cinematic") || lower.includes("ray tracing") || lower.includes("lens flare") || lower.includes("bloom") || lower.includes("glistening")) {
     world.renderQuality = "cinematic";
     operations.push("Enabled cinematic light transport");
   }
@@ -162,10 +224,21 @@ export function runBuilderCommand(input: string, current: WorldModel): BuilderRe
     operations.push("Switched to smooth terrain preview");
   }
 
-  const handlesWater = lower.includes("water") || lower.includes("ocean") || lower.includes("lake") || lower.includes("river");
+  if (lower.includes("sunset")) {
+    world.timeOfDay = "dusk";
+    operations.push("Set time of day to dusk");
+  }
+
+  const handlesWater = lower.includes("water") || lower.includes("ocean") || lower.includes("lake") || lower.includes("river") || lower.includes("flood") || lower.includes("flooded");
   if (handlesWater) {
-    world.waterLevel = clamp(world.waterLevel + 1.8, -10, 5);
+    const lift = lower.includes("flood") || lower.includes("flooded") ? 2.6 : 1.8;
+    world.waterLevel = clamp(world.waterLevel + lift, -10, 6);
     operations.push("Raised water level");
+  }
+
+  if (handlesWater && (lower.includes("lower") || lower.includes("drain") || lower.includes("less water"))) {
+    world.waterLevel = clamp(world.waterLevel - 3.2, -10, 6);
+    operations.push("Lowered water level");
   }
 
   if (lower.includes("clear entities") || lower.includes("empty world") || lower.includes("remove structures")) {
@@ -173,19 +246,19 @@ export function runBuilderCommand(input: string, current: WorldModel): BuilderRe
     operations.push("Cleared all constructed entities");
   }
 
-  if (shouldRegenerate) {
+  if (shouldRegenerate && !configuredZombieCity) {
     world.terrainSeed = (world.terrainSeed * 9301 + 49297) % 233280;
     world.entities = seedEntities(world);
     operations.push("Regenerated world topology");
   }
 
-  if (handlesWater && !world.entities.some((entity) => entity.kind === "water")) {
+  if (handlesWater && !configuredZombieCity && !world.entities.some((entity) => entity.kind === "water")) {
     world.entities.push(createEntity("water", "Reflecting Basin", 0, 0, world.accentColor));
     operations.push("Added reflective water feature");
   }
 
   for (const kind of entityWords) {
-    if (shouldRegenerate || (kind === "water" && handlesWater)) {
+    if (configuredZombieCity || shouldRegenerate || (kind === "water" && handlesWater)) {
       continue;
     }
     if (mentionsKind(lower, kind)) {
@@ -228,6 +301,46 @@ function seedEntities(world: WorldModel) {
   });
 }
 
+function seedZombieCityEntities(world: WorldModel) {
+  const placements: Array<[number, number]> = [
+    [-7, -18],
+    [7, -24],
+    [-18, -2],
+    [16, -8],
+    [22, 14],
+    [-23, 17],
+    [4, 18],
+    [-9, 28],
+    [25, -28],
+    [-27, -26],
+    [0, -34],
+    [30, 4],
+    [-34, 6],
+    [34, -17],
+    [-16, 38],
+    [38, 31],
+    [-38, -14],
+    [12, 40]
+  ];
+  return placements.map(([x, z], index) =>
+    createEntity("zombie", titleCase(`robotic centaur ${index + 1}`), x, z, "#050607", `${world.id}-zombie-${index}`)
+  );
+}
+
+function seedCityNpcEntities(world: WorldModel) {
+  const placements: Array<[number, number]> = [
+    [-4, 10],
+    [9, 8],
+    [-13, 21],
+    [18, 25],
+    [-24, -9],
+    [28, -32]
+  ];
+  return placements.map(([x, z], index) =>
+    createEntity("npc", titleCase(`city npc ${index + 1}`), x, z, "#8b8274", `${world.id}-npc-${index}`)
+  );
+}
+
 function mentionsKind(input: string, kind: EntityKind) {
   if (kind === "tree") {
     return input.includes("tree") || input.includes("forest") || input.includes("grove");
@@ -241,6 +354,9 @@ function mentionsKind(input: string, kind: EntityKind) {
   if (kind === "tendril") {
     return input.includes("tendril") || input.includes("tendral") || input.includes("vine") || input.includes("tentacle");
   }
+  if (kind === "npc") {
+    return input.includes("npc") || input.includes("npcs") || input.includes("non-player character") || input.includes("non player character");
+  }
   return input.includes(kind) || input.includes(`${kind}s`);
 }
 
@@ -249,6 +365,8 @@ function getRequestedCount(input: string, kind: EntityKind) {
     ? ["stone circles", "stone circle", "stone-circles", "stone-circle", "circles", "circle"]
     : kind === "tendril"
       ? ["tendrils", "tendril", "tendrals", "tendral", "vines", "vine", "tentacles", "tentacle"]
+      : kind === "npc"
+        ? ["npcs", "npc", "non-player characters", "non-player character", "non player characters", "non player character"]
       : [`${kind}s`, kind];
   const aliasPattern = aliases.map(escapeRegExp).join("|");
   const optionalDescriptors = "(?:[a-z-]+\\s+){0,3}";

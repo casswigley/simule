@@ -1,4 +1,4 @@
-export type Biome = "alpine" | "desert" | "forest" | "oceanic" | "orbital" | "volcanic" | "neon";
+export type Biome = "alpine" | "desert" | "forest" | "oceanic" | "orbital" | "volcanic" | "neon" | "urban";
 
 export type TimeOfDay = "dawn" | "day" | "dusk" | "night";
 
@@ -20,7 +20,9 @@ export type EntityKind =
   | "cathedral"
   | "mosque"
   | "tent"
-  | "stoneCircle";
+  | "stoneCircle"
+  | "zombie"
+  | "npc";
 
 export interface WorldEntity {
   id: string;
@@ -38,6 +40,7 @@ export interface WorldModel {
   id: string;
   name: string;
   biome: Biome;
+  landscapeStyle: "default" | "dolomite-spires" | "zombie-city";
   matterMode: "fractal-blocks" | "tetra-lattice" | "metaballs" | "smooth";
   fractalDepth: number;
   minimumBlockSize: number;

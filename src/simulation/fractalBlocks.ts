@@ -57,6 +57,10 @@ export function generateTetraLattice(world: WorldModel): TetraCell[] {
 }
 
 export function terrainHeightAt(x: number, z: number, world: WorldModel) {
+  if (world.landscapeStyle === "dolomite-spires") {
+    return dolomiteHeightAt(x, z, world);
+  }
+
   const scale = Math.max(world.terrainScale, 0.006);
   const iteration = iterationMix(world);
   const warpX = fractalNoise(x, z, world.terrainSeed + 17.3, 3, scale * 0.48) * 18;
@@ -74,6 +78,49 @@ export function terrainHeightAt(x: number, z: number, world: WorldModel) {
   const islandFalloff = smoothstep(shoreRadius - 10, shoreRadius + 11, Math.hypot(x, z)) * (world.terrainHeight * 0.62 + 1.8);
 
   return (broad * 0.72 + (ridges - 0.44) * (0.54 + iteration * 0.18) + detail * (0.16 + iteration * 0.18)) * world.terrainHeight - islandFalloff;
+}
+
+function dolomiteHeightAt(x: number, z: number, world: WorldModel) {
+  const scale = Math.max(world.terrainScale, 0.006);
+  const iteration = iterationMix(world);
+  const warpX = fractalNoise(x, z, world.terrainSeed + 19.8, 4, scale * 0.52) * 22;
+  const warpZ = fractalNoise(x, z, world.terrainSeed + 57.2, 4, scale * 0.52) * 22;
+  const wx = x + warpX;
+  const wz = z + warpZ;
+  const uplift = fractalNoise(wx, wz, world.terrainSeed + 11.1, 6, scale * 0.38);
+  const ridgeA = Math.pow(ridgedNoise(wx * 1.12, wz * 0.72, world.terrainSeed + 105.4, 6, scale * 1.16), 1.62);
+  const ridgeB = Math.pow(ridgedNoise(wx * 0.58 - wz * 0.32, wz * 1.16 + wx * 0.22, world.terrainSeed + 175.9, 5, scale * 1.58), 1.9);
+  const fractured = fractalNoise(x + warpX * 0.2, z + warpZ * 0.2, world.terrainSeed + 288.3, 5, scale * 2.7);
+  const spireSeeds = Math.max(0, ridgedNoise(x, z, world.terrainSeed + 377.7, 4, scale * 3.8) - 0.58);
+  const spires = Math.pow(spireSeeds * 1.8, 2.35) * world.terrainHeight * (0.28 + iteration * 0.24);
+  const terraces = Math.sin((wx * 0.18 + wz * 0.11) + fractured * 2.8) * world.terrainHeight * 0.045;
+  const basin = smoothstep(35, 62, Math.hypot(x, z)) * (world.terrainHeight * 0.58);
+  const lagoonCut = smoothstep(0, 26, 26 - Math.hypot(x * 0.82, z * 1.18)) * (world.terrainHeight * 0.5);
+  const viewCorridor = 1 - smoothstep(0, 21, distanceToSegment2D(x, z, -24, 25, 8, -18));
+  const floodedChannel = viewCorridor * world.terrainHeight * 0.9;
+
+  return (
+    uplift * world.terrainHeight * 0.36 +
+    ridgeA * world.terrainHeight * 0.78 +
+    ridgeB * world.terrainHeight * 0.54 +
+    fractured * world.terrainHeight * 0.055 +
+    spires +
+    terraces -
+    basin -
+    lagoonCut -
+    floodedChannel -
+    world.terrainHeight * 0.18
+  );
+}
+
+function distanceToSegment2D(px: number, pz: number, ax: number, az: number, bx: number, bz: number) {
+  const dx = bx - ax;
+  const dz = bz - az;
+  const lengthSq = dx * dx + dz * dz || 1;
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / lengthSq));
+  const x = ax + dx * t;
+  const z = az + dz * t;
+  return Math.hypot(px - x, pz - z);
 }
 
 function appendCell(blocks: FractalBlock[], world: WorldModel, x: number, z: number, size: number, depth: number) {

@@ -442,5 +442,10 @@ button {
 
   .stage-actions {
     align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .optional-hud {
+    display: none;
   }
 }

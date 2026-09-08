@@ -10,7 +10,8 @@ const paletteByBiome: Record<
   oceanic: { sky: "#79b4dc", ground: "#3d7178", accent: "#b9d8c8", weather: "clear", time: "day" },
   orbital: { sky: "#101626", ground: "#596270", accent: "#86d7e3", weather: "aurora", time: "night" },
   volcanic: { sky: "#321d1a", ground: "#4c352e", accent: "#d96f45", weather: "ember", time: "night" },
-  neon: { sky: "#151126", ground: "#293241", accent: "#d855ef", weather: "aurora", time: "night" }
+  neon: { sky: "#151126", ground: "#293241", accent: "#d855ef", weather: "aurora", time: "night" },
+  urban: { sky: "#8fa4b0", ground: "#343839", accent: "#d0d6cf", weather: "mist", time: "dusk" }
 };
 
 const kindDefaults: Record<EntityKind, { height: number; radius: number; glow: number }> = {
@@ -29,10 +30,84 @@ const kindDefaults: Record<EntityKind, { height: number; radius: number; glow: n
   cathedral: { height: 14, radius: 7, glow: 0.28 },
   mosque: { height: 10, radius: 7, glow: 0.18 },
   tent: { height: 6, radius: 6, glow: 0.08 },
-  stoneCircle: { height: 4, radius: 8, glow: 0.22 }
+  stoneCircle: { height: 4, radius: 8, glow: 0.22 },
+  zombie: { height: 2.05, radius: 0.42, glow: 0 },
+  npc: { height: 1.82, radius: 0.34, glow: 0 }
 };
 
 export const worldPresets: WorldModel[] = [
+  createWorld({
+    id: "dead-manhattan",
+    name: "Dead Manhattan",
+    biome: "urban",
+    seed: 908,
+    terrainScale: 0.04,
+    terrainHeight: 1,
+    waterLevel: -10,
+    density: 0.92,
+    landscapeStyle: "zombie-city",
+    matterMode: "smooth",
+    fractalDepth: 5,
+    minimumBlockSize: 0.75,
+    maximumBlockSize: 6,
+    refractionLevel: 0.24,
+    timeOfDay: "dusk",
+    weather: "mist",
+    skyColor: "#8fa4b0",
+    groundColor: "#343839",
+    accentColor: "#d0d6cf",
+    entities: [
+      ["zombie", "Broadway Walker", -7, -18],
+      ["zombie", "Subway Dead", 7, -24],
+      ["zombie", "Crosswalk Dead", -18, -2],
+      ["zombie", "Taxi Lane Walker", 16, -8],
+      ["zombie", "Glass Tower Dead", 22, 14],
+      ["zombie", "Alley Walker", -23, 17],
+      ["zombie", "Median Walker", 4, 18],
+      ["zombie", "North Block Dead", -9, 28],
+      ["zombie", "Corner Dead", 25, -28],
+      ["zombie", "Park Edge Walker", -27, -26],
+      ["zombie", "Underpass Dead", 0, -34],
+      ["zombie", "Newsstand Walker", 30, 4],
+      ["zombie", "Avenue Dead", -34, 6],
+      ["zombie", "Bus Stop Walker", 34, -17],
+      ["zombie", "Financial District Dead", -16, 38],
+      ["zombie", "Rooftop Shadow", 38, 31],
+      ["zombie", "Tunnel Mouth Dead", -38, -14],
+      ["zombie", "Broadway North Walker", 12, 40],
+      ["npc", "Lost Commuter", -4, 10],
+      ["npc", "Office Survivor", 9, 8],
+      ["npc", "Courier", -13, 21],
+      ["npc", "Medic", 18, 25],
+      ["npc", "Transit Worker", -24, -9],
+      ["npc", "Security Guard", 28, -32]
+    ]
+  }),
+  createWorld({
+    id: "dolomite-floodlands",
+    name: "Dolomite Floodlands",
+    biome: "alpine",
+    seed: 512,
+    terrainScale: 0.078,
+    terrainHeight: 20,
+    waterLevel: 3.6,
+    density: 0.88,
+    landscapeStyle: "dolomite-spires",
+    matterMode: "smooth",
+    fractalDepth: 8,
+    minimumBlockSize: 0.75,
+    maximumBlockSize: 4,
+    refractionLevel: 0.86,
+    timeOfDay: "dusk",
+    weather: "mist",
+    skyColor: "#7aa7c1",
+    groundColor: "#6f746c",
+    accentColor: "#ffd18f",
+    entities: [
+      ["water", "Flooded Mirror Basin", 0, 0],
+      ["stoneCircle", "Submerged Shore Markers", 28, 30]
+    ]
+  }),
   createWorld({
     id: "tetrahedral-horizon",
     name: "Tetrahedral Horizon",
@@ -201,7 +276,18 @@ export function createWorld(config: {
   terrainHeight: number;
   waterLevel: number;
   density: number;
+  landscapeStyle?: WorldModel["landscapeStyle"];
   matterMode?: WorldModel["matterMode"];
+  fractalDepth?: number;
+  minimumBlockSize?: number;
+  maximumBlockSize?: number;
+  renderQuality?: WorldModel["renderQuality"];
+  refractionLevel?: number;
+  timeOfDay?: TimeOfDay;
+  weather?: Weather;
+  skyColor?: string;
+  groundColor?: string;
+  accentColor?: string;
   entities: Array<[EntityKind, string, number, number]>;
 }): WorldModel {
   const palette = paletteByBiome[config.biome];
@@ -209,22 +295,23 @@ export function createWorld(config: {
     id: config.id,
     name: config.name,
     biome: config.biome,
+    landscapeStyle: config.landscapeStyle ?? "default",
     matterMode: config.matterMode ?? "fractal-blocks",
-    fractalDepth: 5,
-    minimumBlockSize: 0.75,
-    maximumBlockSize: 6,
-    renderQuality: "cinematic",
-    refractionLevel: 0.34,
-    timeOfDay: palette.time,
-    weather: palette.weather,
+    fractalDepth: config.fractalDepth ?? 5,
+    minimumBlockSize: config.minimumBlockSize ?? 0.75,
+    maximumBlockSize: config.maximumBlockSize ?? 6,
+    renderQuality: config.renderQuality ?? "cinematic",
+    refractionLevel: config.refractionLevel ?? 0.34,
+    timeOfDay: config.timeOfDay ?? palette.time,
+    weather: config.weather ?? palette.weather,
     terrainSeed: config.seed,
     terrainScale: config.terrainScale,
     terrainHeight: config.terrainHeight,
     waterLevel: config.waterLevel,
     density: config.density,
-    skyColor: palette.sky,
-    groundColor: palette.ground,
-    accentColor: palette.accent,
+    skyColor: config.skyColor ?? palette.sky,
+    groundColor: config.groundColor ?? palette.ground,
+    accentColor: config.accentColor ?? palette.accent,
     entities: config.entities.map(([kind, label, x, z], index) =>
       createEntity(kind, label, x, z, entityColorFor(config.biome, kind, palette.accent), `${config.id}-${index}`)
     ),
@@ -271,7 +358,8 @@ function entityColorFor(biome: Biome, kind: EntityKind, fallback: string) {
     oceanic: "#718b83",
     orbital: "#728091",
     volcanic: "#6d5b50",
-    neon: "#6b5e8f"
+    neon: "#6b5e8f",
+    urban: kind === "zombie" ? "#050607" : kind === "npc" ? "#8b8274" : "#63696b"
   };
 
   return colors[biome];

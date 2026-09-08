@@ -49,4 +49,19 @@ describe("generateFractalBlocks", () => {
     expect(Number.isFinite(center)).toBe(true);
     expect(Math.abs(center - nearby)).toBeLessThan(world.terrainHeight * 0.45);
   });
+
+  it("creates high-relief Dolomite-style elevation for the flooded spire world", () => {
+    const world = cloneWorld(worldPresets.find((preset) => preset.id === "dolomite-floodlands") ?? worldPresets[0]);
+    const samples = [];
+
+    for (let z = -32; z <= 32; z += 8) {
+      for (let x = -32; x <= 32; x += 8) {
+        samples.push(terrainHeightAt(x, z, world));
+      }
+    }
+
+    expect(samples.every(Number.isFinite)).toBe(true);
+    expect(Math.max(...samples) - Math.min(...samples)).toBeGreaterThan(world.terrainHeight * 0.9);
+    expect(world.waterLevel).toBeGreaterThan(Math.min(...samples));
+  });
 });

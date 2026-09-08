@@ -10,13 +10,15 @@ The project is intentionally playful and research-oriented. It explores how Mine
 
 ## Features
 
-- First-person exploration with mouse look, WASD movement, arrow-key movement, arrow-key turning, and fullscreen mode.
+- First-person exploration with mouse look, walking, kayak-style momentum controls, arrow-key movement, and fullscreen mode.
 - Conversational world builder for live scene reconstruction.
-- Preset worlds including tetrahedral landscapes, metaball basins, alpine citadels, orbital skies, volcanic terrain, and a reactive tendril grove.
-- Recursive controls for iteration depth, minimum block size, maximum block size, render quality, and atmosphere/mist balance.
+- Preset worlds including a modern city with jet-black robotic centaurs and NPC walkers, a flooded Dolomite spire landscape, tetrahedral landscapes, metaball basins, alpine citadels, orbital skies, volcanic terrain, and a reactive tendril grove.
+- Recursive controls for iteration depth, minimum block size, maximum block size, render quality, atmosphere/mist balance, and water level.
 - Multiple geometry modes: fractal blocks, tetrahedral lattice worlds, metaball terrain and objects, and smoother procedural forms.
 - Naturalistic world elements including recursive trees, waterforms, coastlines, stone circles, castles, cathedrals, tents, portals, crystals, and swaying tendrils.
 - Atmospheric rendering with bloom-style highlights, lens flare cues, sun/moon/planet sky compositions, clouds, fog, aurora, and time-of-day palettes.
+- Reflective shader water for the Dolomite world with procedural ripple normals, variable water level, and subtle sunset glints.
+- City shooter mode with street-level first-person movement, NPC walkers, a detailed spacebar-fired pistol, bullet tracers, casing ejection, glowing impact marks, explosion sparks, headshot kills, and three-hit body kills.
 - Active lattice behavior for animated materials such as water and special substances.
 - Vercel-ready static deployment configuration.
 
@@ -25,8 +27,10 @@ The project is intentionally playful and research-oriented. It explores how Mine
 Try commands like:
 
 ```text
+create an empty modern city overrun by zombies
 turn on ray tracing bloom and lens flare
 use self-similar fractal blocks with more detail
+create a flooded dolomite spire landscape at sunset
 make it a volcanic night world with ember weather
 add three towers and a glowing portal
 raise mountains and add a river
@@ -38,13 +42,16 @@ add three swaying tendrils near the path
 ## Controls
 
 - Click the viewport to enter first-person mode.
-- `W`, `A`, `S`, `D`: move.
-- `Up` / `Down`: move forward and backward.
-- `Left` / `Right`: turn left and right.
+- `W` / `Up`: move forward, or paddle forward and build momentum in Dolomite Floodlands.
+- `S` / `Down`: move backward, or slow down/gently reverse in Dolomite Floodlands.
+- `A` / `Left`, `D` / `Right`: turn left/right.
+- `Space`: fire the pistol in Dead Manhattan, or jump in non-city ground worlds.
 - Mouse: look around.
 - Fullscreen button: enter or exit fullscreen.
 
-Movement uses the current viewing direction as the natural forward vector, so walking while looking around feels closer to an open-world first-person camera.
+Dead Manhattan is a modern city scene: jet-black horned robotic centaurs move toward the player, NPCs walk sidewalk routes, headshots kill in one shot, and body shots kill after three hits.
+
+The Dolomite Floodlands view behaves like a kayak: repeated forward input builds speed, release glides to a stop, and turning eases in and out instead of snapping.
 
 ## Tech Stack
 

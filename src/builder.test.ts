@@ -3,6 +3,7 @@ import { runBuilderCommand } from "./builder";
 import { cloneWorld, worldPresets } from "./worlds";
 
 const landmarkKinds = new Set(["castle", "cathedral", "mosque", "tent", "stoneCircle"]);
+const preset = (id: string) => cloneWorld(worldPresets.find((world) => world.id === id) ?? worldPresets[0]);
 
 describe("runBuilderCommand", () => {
   it("retunes biome, weather, and time in one conversational command", () => {
@@ -16,7 +17,7 @@ describe("runBuilderCommand", () => {
   });
 
   it("adds requested entities without mutating the input world", () => {
-    const world = cloneWorld(worldPresets[1]);
+    const world = preset("tetrahedral-horizon");
     const previousCount = world.entities.length;
     const result = runBuilderCommand("add three towers and a portal", world);
 
@@ -37,7 +38,7 @@ describe("runBuilderCommand", () => {
   });
 
   it("handles water commands without duplicate water entities", () => {
-    const world = cloneWorld(worldPresets[0]);
+    const world = preset("tetrahedral-horizon");
     const result = runBuilderCommand("raise mountains and add a river", world);
 
     expect(result.world.entities.filter((entity) => entity.kind === "water")).toHaveLength(1);
@@ -56,7 +57,7 @@ describe("runBuilderCommand", () => {
   });
 
   it("can increase recursive fractal detail from chat ops", () => {
-    const world = cloneWorld(worldPresets[0]);
+    const world = preset("tetrahedral-horizon");
     const result = runBuilderCommand("use self-similar fractal blocks with more detail", world);
 
     expect(result.world.matterMode).toBe("fractal-blocks");
@@ -123,7 +124,9 @@ describe("runBuilderCommand", () => {
 
   it("ships every preset with a readable landmark structure", () => {
     expect(
-      worldPresets.every((world) => world.entities.some((entity) => landmarkKinds.has(entity.kind)))
+      worldPresets
+        .filter((world) => world.landscapeStyle !== "zombie-city")
+        .every((world) => world.entities.some((entity) => landmarkKinds.has(entity.kind)))
     ).toBe(true);
   });
 
@@ -136,5 +139,50 @@ describe("runBuilderCommand", () => {
     const showcase = worldPresets.find((world) => world.id === "swaying-tendril-grove");
 
     expect(showcase?.entities.filter((entity) => entity.kind === "tendril").length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("ships Dead Manhattan as the default city shooter world", () => {
+    const preset = worldPresets[0];
+
+    expect(preset.id).toBe("dead-manhattan");
+    expect(preset.landscapeStyle).toBe("zombie-city");
+    expect(preset.biome).toBe("urban");
+    expect(preset.entities.filter((entity) => entity.kind === "zombie").length).toBeGreaterThanOrEqual(18);
+    expect(preset.entities.filter((entity) => entity.kind === "npc").length).toBeGreaterThanOrEqual(6);
+  });
+
+  it("ships a flooded Dolomite spire simulator preset", () => {
+    const preset = worldPresets.find((world) => world.id === "dolomite-floodlands");
+
+    expect(preset?.landscapeStyle).toBe("dolomite-spires");
+    expect(preset?.matterMode).toBe("smooth");
+    expect(preset?.waterLevel).toBeGreaterThan(1);
+    expect(preset?.refractionLevel).toBeGreaterThan(0.8);
+    expect(preset?.timeOfDay).toBe("dusk");
+  });
+
+  it("can reconstruct an empty zombie city from chat ops without extra entity drift", () => {
+    const world = preset("dolomite-floodlands");
+    const result = runBuilderCommand("I want a new world like New York with zombies everywhere and a gun", world);
+
+    expect(result.world.landscapeStyle).toBe("zombie-city");
+    expect(result.world.biome).toBe("urban");
+    expect(result.world.entities).toHaveLength(24);
+    expect(result.world.entities.filter((entity) => entity.kind === "zombie")).toHaveLength(18);
+    expect(result.world.entities.filter((entity) => entity.kind === "npc")).toHaveLength(6);
+    expect(result.operations).toContain("Rebuilt as a modern city with robotic centaurs and NPC walkers");
+    expect(result.operations).not.toContain("Regenerated world topology");
+  });
+
+  it("can reconstruct a flooded Dolomite sunset world from chat ops", () => {
+    const world = cloneWorld(worldPresets[1]);
+    const result = runBuilderCommand("create a flooded dolomite spire landscape at sunset with glistening refractive water", world);
+
+    expect(result.world.landscapeStyle).toBe("dolomite-spires");
+    expect(result.world.matterMode).toBe("smooth");
+    expect(result.world.waterLevel).toBeGreaterThan(2);
+    expect(result.world.refractionLevel).toBeGreaterThan(0.8);
+    expect(result.world.timeOfDay).toBe("dusk");
+    expect(result.operations).toContain("Built flooded Dolomite spire geography");
   });
 });
